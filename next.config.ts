@@ -10,9 +10,14 @@ const pwa = withPWA({
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  output: "export",
   images: {
+    unoptimized: true, // Required for static export
     formats: ["image/avif", "image/webp"],
   },
+  // If your repo is not at root (e.g., username.github.io/repo-name), uncomment and set basePath:
+  // basePath: "/repo-name",
+  // trailingSlash: true,
 };
 
 export default pwa(nextConfig);
