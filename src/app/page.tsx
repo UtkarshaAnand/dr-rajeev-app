@@ -461,15 +461,20 @@ export default function Home() {
               "Pediatric Urology",
               "Minimally Invasive & Advanced Urology",
             ].map((label, index, array) => (
-              <button
+              <div
                 key={label}
-                onClick={() => handleServiceClick(label)}
-                className={`rounded-2xl bg-[#017CA6] text-white text-center px-4 py-6 shadow-sm hover:bg-[#016a8f] transition-colors h-full min-h-[120px] flex items-center justify-center cursor-pointer ${
+                className={`rounded-2xl bg-[#017CA6] text-white px-4 py-6 shadow-sm h-full min-h-[120px] flex flex-col justify-between ${
                   index === array.length - 1 ? 'col-span-2 md:col-span-1 justify-self-center md:justify-self-stretch max-w-[calc(50%-0.375rem)] md:max-w-none' : ''
                 }`}
               >
-                <p className="text-sm font-semibold">{label}</p>
-              </button>
+                <p className="text-sm font-semibold text-center mb-3">{label}</p>
+                <button
+                  onClick={() => handleServiceClick(label)}
+                  className="text-sm font-thin italic hover:no-underline transition-all self-center cursor-pointer"
+                >
+                  View details
+                </button>
+              </div>
             ))}
           </div>
         </section>
