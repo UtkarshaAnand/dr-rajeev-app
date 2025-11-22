@@ -11,14 +11,17 @@ const pwa = withPWA({
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "export",
-  trailingSlash: true, // Helps with GitHub Pages routing
+  trailingSlash: true,
   images: {
     unoptimized: true, // Required for static export
     formats: ["image/avif", "image/webp"],
   },
-  // If your repo is not at root (e.g., username.github.io/repo-name), uncomment and set basePath:
+  basePath: "/dr-rajeev-app",
+  assetPrefix: "/dr-rajeev-app",
+  // IMPORTANT: If your site URL is https://username.github.io/repo-name (NOT username.github.io)
+  // Uncomment the next 2 lines and replace "repo-name" with your actual repository name:
   // basePath: "/repo-name",
-  // assetPrefix: "/repo-name", // Also set this if using basePath
+  // assetPrefix: "/repo-name",
 };
 
 export default pwa(nextConfig);
