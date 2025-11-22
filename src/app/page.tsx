@@ -490,9 +490,9 @@ export default function Home() {
           >
             <div className="flex gap-6 pb-4 min-w-max">
               {/* Kolkata kidney institute */}
-              <div data-card-index="0" className="rounded-xl bg-[#017CA6] text-white p-6 w-[320px] flex-shrink-0 flex flex-col">
+              <div data-card-index="0" className="rounded-xl bg-[#016a8f] text-white p-6 w-[320px] flex-shrink-0 flex flex-col">
                 <div className="mb-4">
-                  <p className="font-bold text-lg">Kolkata kidney institute</p>
+                  <p className="font-bold text-lg">Kolkata Kidney Institute</p>
                 </div>
                 <p className="text-sm mb-1">Monday, Wednesday, Friday - 5:30 pm to 7:00 pm</p>
                 <p className="text-sm mb-3">Tuesday, Thursday, Saturday - 5:30 pm to 7:00 pm</p>
@@ -532,7 +532,7 @@ export default function Home() {
               </div>
 
               {/* Apollo Polyclinic */}
-              <div data-card-index="2" className="rounded-xl bg-[#017CA6] text-white p-6 w-[320px] flex-shrink-0 flex flex-col">
+              <div data-card-index="2" className="rounded-xl bg-[#016a8f] text-white p-6 w-[320px] flex-shrink-0 flex flex-col">
                 <div className="mb-4">
                   <p className="font-bold text-lg">Apollo Polyclinic</p>
                 </div>
