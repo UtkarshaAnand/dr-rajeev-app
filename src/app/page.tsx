@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 
 function SectionTitle({ title, highlight }: { title: string; highlight?: string }) {
@@ -11,6 +10,17 @@ function SectionTitle({ title, highlight }: { title: string; highlight?: string 
         {title} {highlight && <span className="text-[#017CA6] font-bold">{highlight}</span>}
       </h2>
       <div className="flex-1 h-px bg-slate-300"></div>
+    </div>
+  );
+}
+
+function DefaultUserIcon({ size = 120 }: { size?: number }) {
+  const fontSize = size * 0.4; // Scale font size based on icon size
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <span className="text-[#017CA6] font-bold" style={{ fontSize: `${fontSize}px` }}>
+        RR
+      </span>
     </div>
   );
 }
@@ -387,12 +397,19 @@ export default function Home() {
     <>
       <ServiceModal service={selectedService} isOpen={isModalOpen} onClose={closeModal} />
       <div className="min-h-screen w-full bg-gradient-to-b from-sky-100 to-white text-slate-900">
-      <header className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="text-sm md:text-base font-medium flex gap-6">
-          <a href="#" className="hover:text-[#017CA6]">Home</a>
-          <a href="#services" className="hover:text-[#017CA6]">Services</a>
-          {/* <a href="#schedule" className="hover:text-[#017CA6]">Study Guide</a> */}
-          <a href="#contact" className="hover:text-[#017CA6]">Contact</a>
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-[#017CA6] flex items-center justify-center">
+              <span className="text-white font-bold text-lg">RR</span>
+            </div>
+          </div>
+          <nav className="text-sm md:text-base font-medium flex gap-4 md:gap-6">
+            <a href="#" className="text-slate-700 hover:text-[#017CA6] transition-colors py-2 px-1 border-b-2 border-transparent hover:border-[#017CA6]">Home</a>
+            <a href="#services" className="text-slate-700 hover:text-[#017CA6] transition-colors py-2 px-1 border-b-2 border-transparent hover:border-[#017CA6]">Services</a>
+            {/* <a href="#schedule" className="text-slate-700 hover:text-[#017CA6] transition-colors py-2 px-1 border-b-2 border-transparent hover:border-[#017CA6]">Study Guide</a> */}
+            <a href="#contact" className="text-slate-700 hover:text-[#017CA6] transition-colors py-2 px-1 border-b-2 border-transparent hover:border-[#017CA6]">Contact</a>
+          </nav>
         </div>
       </header>
 
@@ -400,10 +417,10 @@ export default function Home() {
         {/* Hero */}
         <section className="grid md:grid-cols-2 gap-8 items-center py-10 md:py-16">
           <div>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+            <h1 className="text-5xl md:text-6xl lg:text-6xl xl:text-6xl font-extrabold tracking-tight">
               Rajeev <span className="text-[#017CA6]">Ranjan</span>
             </h1>
-            <p className="mt-2 text-base md:text-lg font-medium">
+            <p className="mt-2 text-lg md:text-xl lg:text-2xl font-medium">
               MBBS, MS (General Surgery), DrNB (Urology)
             </p>
             <div className="mt-6 flex gap-4">
@@ -425,8 +442,8 @@ export default function Home() {
             </div>
           </div>
           <div className="flex justify-center md:justify-end">
-              <div className="w-56 h-56 md:w-72 md:h-72 rounded-full bg-[#017CA6]/20 grid place-items-center">
-              <Image src="/vercel.svg" alt="Doctor" width={180} height={180} />
+              <div className="w-56 h-56 md:w-72 md:h-72 rounded-full bg-[#017CA6]/20 grid place-items-center overflow-hidden">
+              <DefaultUserIcon size={180} />
             </div>
           </div>
         </section>
@@ -566,27 +583,29 @@ export default function Home() {
                 He has over two years of specialized experience with the Da‑Vinci Robotic Surgical System, offering advanced,
                 precise, and effective treatment options to patients.
               </p>
-              <div className="pt-4 space-y-3">
-                <p className="text-xs text-slate-700">Registration Number: 65143 / West Bengal Medical Council / 27 July, 2009</p>
-                <div className="flex flex-col gap-2">
-                  <a href="tel:7602981231" className="flex items-center gap-2 text-sm text-slate-700 hover:text-[#017CA6] transition-colors">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                    </svg>
-                    <span>7602981231</span>
-                  </a>
-                  <a href="mailto:rajeev6670@gmail.com" className="flex items-center gap-2 text-sm text-slate-700 hover:text-[#017CA6] transition-colors">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                    </svg>
-                    <span>rajeev6670@gmail.com</span>
-                  </a>
+              <div className="pt-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 md:p-5 space-y-3">
+                  <p className="text-xs text-slate-700">Registration Number: 65143 / West Bengal Medical Council / 27 July, 2009</p>
+                  <div className="flex flex-col gap-2">
+                    <a href="tel:7602981231" className="flex items-center gap-2 text-sm text-slate-700 hover:text-[#017CA6] transition-colors">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                      </svg>
+                      <span>7602981231</span>
+                    </a>
+                    <a href="mailto:rajeev6670@gmail.com" className="flex items-center gap-2 text-sm text-slate-700 hover:text-[#017CA6] transition-colors">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                      </svg>
+                      <span>rajeev6670@gmail.com</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
             <div className="flex justify-center md:justify-end">
-              <div className="w-40 h-40 md:w-60 md:h-60 rounded-full bg-[#017CA6]/20 grid place-items-center">
-                <Image src="/vercel.svg" alt="Doctor" width={120} height={120} />
+              <div className="w-40 h-40 md:w-60 md:h-60 rounded-full bg-[#017CA6]/20 grid place-items-center overflow-hidden">
+                <DefaultUserIcon size={120} />
               </div>
             </div>
           </div>
