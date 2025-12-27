@@ -41,16 +41,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to send push notification (call from message creation)
-export async function sendPushNotification(
-  doctorId: string,
-  title: string,
-  body: string,
-  data?: any
-) {
-  // TODO: Implement FCM push notification
-  // This requires Firebase Admin SDK
-  // For now, this is a placeholder
-  console.log('Push notification:', { doctorId, title, body, data });
-}
-
