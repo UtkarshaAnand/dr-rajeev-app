@@ -88,8 +88,8 @@ export function useWebSocket({
         const response = await fetch(`/api/messages?chatId=${chatId}`);
         if (response.ok) {
           const data = await response.json();
-          if (data.messages && onMessageRef.current && data.messages.length > 0) {
-            // Only notify about new messages (after last known message time)
+          if (data.messages && onMessageRef.current) {
+            // Check for new messages (after last known message time)
             const newMessages = data.messages.filter((msg: any) => {
               const msgTime = new Date(msg.created_at).getTime();
               return msgTime > lastMessageTimeRef.current;
@@ -109,6 +109,14 @@ export function useWebSocket({
                   message: msg,
                 });
               });
+            }
+            
+            // Also update baseline if no new messages but we have messages
+            if (data.messages.length > 0 && lastMessageTimeRef.current === 0) {
+              const latestTime = Math.max(...data.messages.map((msg: any) => 
+                new Date(msg.created_at).getTime()
+              ));
+              lastMessageTimeRef.current = latestTime;
             }
           }
         }
@@ -189,12 +197,15 @@ export function useWebSocket({
         reconnectAttemptsRef.current = 0;
         stopPolling();
 
-        // Join the chat
-        ws.send(JSON.stringify({
-          type: 'join',
-          chatId,
-          sender,
-        }));
+        // Join the chat immediately upon connection
+        if (chatId) {
+          const joinMessage = {
+            type: 'join',
+            chatId,
+            sender,
+          };
+          ws.send(JSON.stringify(joinMessage));
+        }
       };
 
       ws.onmessage = (event) => {
@@ -211,6 +222,14 @@ export function useWebSocket({
           }
 
           if (message.type === 'message' && onMessageRef.current) {
+            // Update last message time to prevent duplicate polling
+            if (message.message?.created_at) {
+              const msgTime = new Date(message.message.created_at).getTime();
+              if (msgTime > lastMessageTimeRef.current) {
+                lastMessageTimeRef.current = msgTime;
+              }
+            }
+            // Call the message handler
             onMessageRef.current(message);
           }
 
@@ -245,6 +264,12 @@ export function useWebSocket({
         setIsConnected(false);
         setConnectionStatus('disconnected');
         wsRef.current = null;
+
+        // Clear backup polling interval
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
 
         // Handle different close codes
         const isNormalClosure = event.code === 1000;

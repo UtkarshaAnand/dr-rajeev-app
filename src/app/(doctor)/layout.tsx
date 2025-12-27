@@ -1,10 +1,24 @@
 import { Metadata } from 'next';
+import InstallPWA from '@/components/InstallPWA';
+import { PWAMeta } from '@/components/PWAMeta';
 
 export const metadata: Metadata = {
   title: 'Doctor Portal - Dr. Rajeev Ranjan',
   description: 'Doctor PWA for managing patient chats',
-  manifest: '/manifest.json',
+  manifest: '/manifest-doctor.json',
   themeColor: '#017CA6',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Dr. Rajeev Portal',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
 };
 
 export default function DoctorLayout({
@@ -12,6 +26,12 @@ export default function DoctorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <PWAMeta />
+      {children}
+      <InstallPWA />
+    </>
+  );
 }
 

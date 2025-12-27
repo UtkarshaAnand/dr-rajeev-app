@@ -88,6 +88,7 @@ export default function ChatWindow({ chatId, onClose, onChatCreated, buttonPosit
     }
   };
 
+
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
@@ -171,17 +172,18 @@ export default function ChatWindow({ chatId, onClose, onChatCreated, buttonPosit
     setInput('');
     setIsLoading(true);
 
-      if (!currentChatId) return;
-      try {
-        const response = await fetch('/api/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chatId: currentChatId,
-            sender: 'patient',
-            content,
-          }),
-        });
+    if (!currentChatId) return;
+
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: currentChatId,
+          sender: 'patient',
+          content,
+        }),
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -199,7 +201,7 @@ export default function ChatWindow({ chatId, onClose, onChatCreated, buttonPosit
         await loadMessages();
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('[Patient Chat] Failed to send message:', error);
     } finally {
       setIsLoading(false);
     }

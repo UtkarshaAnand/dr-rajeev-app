@@ -36,8 +36,6 @@ export async function POST(request: NextRequest) {
 
     await updateDoctorFCMTokens(doctor.id, updatedTokens);
 
-    console.log(`[FCM] Registered token for doctor ${doctorEmail}`);
-
     return NextResponse.json({
       success: true,
       message: 'FCM token registered successfully',
@@ -87,8 +85,6 @@ export async function DELETE(request: NextRequest) {
     const updatedTokens = existingTokens.filter(token => token !== fcmToken);
 
     await updateDoctorFCMTokens(doctor.id, updatedTokens);
-
-    console.log(`[FCM] Removed token for doctor ${doctorEmail}`);
 
     return NextResponse.json({
       success: true,

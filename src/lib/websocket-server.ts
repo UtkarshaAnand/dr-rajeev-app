@@ -2,7 +2,8 @@
 // This server handles WebSocket connections and message broadcasting
 
 import { WebSocketServer, WebSocket } from 'ws';
-import { broadcastToChat, addConnection, removeConnection } from './socket';
+import { broadcastToChat, addConnection, removeConnection, getConnectionInfo, getChatSockets } from './socket';
+import { initializeWebSocketServer } from './server-init';
 
 interface WebSocketMessage {
   type: 'join' | 'message' | 'ping' | 'pong' | 'typing' | 'stop_typing';
@@ -14,42 +15,71 @@ interface WebSocketMessage {
 
 let wss: WebSocketServer | null = null;
 
+// Use global to share server instance across Next.js serverless module contexts
+declare global {
+  var __wss__: WebSocketServer | undefined;
+}
+
+// Get server from global or module-level variable
+function getServerInstance(): WebSocketServer | null {
+  // In Next.js serverless, use global to share across module contexts
+  if (typeof global !== 'undefined' && global.__wss__) {
+    return global.__wss__;
+  }
+  return wss;
+}
+
+// Set server in both global and module-level
+function setServerInstance(server: WebSocketServer | null): void {
+  wss = server;
+  if (typeof global !== 'undefined') {
+    if (server) {
+      global.__wss__ = server;
+    } else {
+      delete global.__wss__;
+    }
+  }
+}
+
 export function startWebSocketServer(port: number = 3001): WebSocketServer {
-  if (wss) {
-    console.log(`[WebSocket] Server already running on port ${port}`);
-    return wss; // Already started
+  const existing = getServerInstance();
+  if (existing) {
+    return existing; // Already started
   }
 
+  let newServer: WebSocketServer;
+  
   try {
-    console.log(`[WebSocket] Starting server on port ${port}...`);
-    wss = new WebSocketServer({ 
+    newServer = new WebSocketServer({ 
       port,
       perMessageDeflate: false, // Disable compression for better compatibility
     });
+    
+    setServerInstance(newServer);
 
     // Handle server-level errors
-    wss.on('error', (error: Error & { code?: string }) => {
+    newServer.on('error', (error: Error & { code?: string }) => {
       if (error.code === 'EADDRINUSE') {
-        console.error(`[WebSocket] Port ${port} is already in use`);
-        wss = null;
+        console.error(`[WebSocket] Port ${port} is already in use - server may be running in another context`);
+        // Don't set to null - the server might exist in another module context
+        // Try to keep the reference if possible
       } else {
         console.error('[WebSocket] Server error:', error);
       }
     });
 
-    wss.on('listening', () => {
-      console.log(`[WebSocket] Server successfully started and listening on port ${port}`);
+    newServer.on('listening', () => {
+      // Server started successfully
     });
 
-  } catch (error: any) {
-    console.error(`[WebSocket] Failed to create server on port ${port}:`, error);
-    wss = null;
-    throw error;
-  }
-
-  wss.on('connection', (ws: WebSocket, req) => {
+    // Set up connection handler
+    newServer.on('connection', (ws: WebSocket, req) => {
     let chatId: string | null = null;
     let userType: 'patient' | 'doctor' | null = null;
+    
+    // Store chat info on the WebSocket object for later access
+    (ws as any).chatId = null;
+    (ws as any).userType = null;
 
     // Send ping every 30 seconds to keep connection alive
     const pingInterval = setInterval(() => {
@@ -67,8 +97,12 @@ export function startWebSocketServer(port: number = 3001): WebSocketServer {
             if (message.chatId && message.sender) {
               chatId = message.chatId;
               userType = message.sender;
+              
+              // Store on WebSocket object for direct access
+              (ws as any).chatId = chatId;
+              (ws as any).userType = userType;
+              
               addConnection(chatId, ws, userType);
-              console.log(`[WebSocket] ${userType} joined chat ${chatId}`);
               
               // Send confirmation
               const joinResponse = {
@@ -77,9 +111,8 @@ export function startWebSocketServer(port: number = 3001): WebSocketServer {
                 sender: userType,
               };
               ws.send(JSON.stringify(joinResponse));
-              console.log(`[WebSocket] Sent join confirmation to ${userType} for chat ${chatId}`);
             } else {
-              console.warn('[WebSocket] Invalid join message:', message);
+              console.warn('[WebSocket Server] Invalid join message:', message);
             }
             break;
 
@@ -122,7 +155,6 @@ export function startWebSocketServer(port: number = 3001): WebSocketServer {
     ws.on('close', () => {
       if (chatId) {
         removeConnection(chatId, ws);
-        console.log(`[WebSocket] ${userType} left chat ${chatId}`);
       }
       clearInterval(pingInterval);
     });
@@ -138,31 +170,112 @@ export function startWebSocketServer(port: number = 3001): WebSocketServer {
     ws.on('pong', () => {
       // Heartbeat received
     });
-  });
+    });
 
-  wss.on('error', (error) => {
-    console.error('[WebSocket] Server error:', error);
-  });
+    return newServer;
 
-  console.log(`[WebSocket] Server started on port ${port}`);
-  return wss;
+  } catch (error: any) {
+    console.error(`[WebSocket] Failed to create server on port ${port}:`, error);
+    
+    // If port is in use, check if server exists in global (might be from another module context)
+    if (error.code === 'EADDRINUSE') {
+      console.warn(`[WebSocket] Port ${port} already in use - checking for existing server instance`);
+      const existing = getServerInstance();
+      if (existing) {
+        return existing;
+      }
+    }
+    
+    setServerInstance(null);
+    throw error;
+  }
 }
 
 export function getWebSocketServer(): WebSocketServer | null {
-  return wss;
+  return getServerInstance();
 }
 
 export function stopWebSocketServer(): void {
-  if (wss) {
-    wss.close();
-    wss = null;
-    console.log('[WebSocket] Server stopped');
+  const server = getServerInstance();
+  if (server) {
+    server.close();
+    setServerInstance(null);
   }
 }
 
 // Export broadcast function that uses the WebSocket server
 export function broadcastMessage(chatId: string, message: any, excludeSocket?: WebSocket): void {
-  console.log(`[WebSocket Server] Broadcasting message to chat ${chatId}:`, message);
+  // Ensure we have access to the WebSocket server
+  // Use getWebSocketServer() which checks both global and module-level
+  let server = getWebSocketServer();
+  
+  // If still no server, try initializing it (might already be running in another context)
+  if (!server) {
+    try {
+      const initialized = initializeWebSocketServer();
+      server = initialized || getWebSocketServer();
+    } catch (err) {
+      console.error(`[WebSocket Server] Failed to initialize server:`, err);
+    }
+  }
+  
+  if (!server) {
+    console.error(`[WebSocket Server] ⚠ WebSocket server not available! Cannot broadcast message.`);
+    console.error(`[WebSocket Server] Messages will still be saved to database, but real-time delivery failed.`);
+    return;
+  }
+  
+  const messageStr = JSON.stringify(message);
+  const sentSockets = new Set<WebSocket>(); // Track sent sockets to avoid duplicates
+  let totalSent = 0;
+  
+  // Method 1: Always try broadcastToChat first (uses the connections map)
+  const connectionInfo = getConnectionInfo(chatId);
+  
+  // Track sockets from connections map to avoid duplicates in fallback
+  const connectionMapSockets = getChatSockets(chatId);
+  if (connectionInfo.total > 0) {
+    connectionMapSockets.forEach(socket => {
+      if (socket !== excludeSocket && socket.readyState === WebSocket.OPEN) {
+        sentSockets.add(socket);
+      }
+    });
+  }
+  
+  // Always call broadcastToChat - it has its own checks
   broadcastToChat(chatId, message, excludeSocket);
+  
+  // Method 2: Fallback - Always check wss.clients as well
+  // This ensures we catch any clients that might not be in the connections map
+  // or if the connections map is out of sync
+  if (server && server.clients) {
+    server.clients.forEach((client: WebSocket) => {
+      const clientChatId = (client as any).chatId;
+      const clientUserType = (client as any).userType;
+      const isExcluded = client === excludeSocket;
+      const isOpen = client.readyState === WebSocket.OPEN;
+      const alreadySent = sentSockets.has(client);
+      const chatIdMatches = clientChatId === chatId;
+      
+      // Send to client if:
+      // 1. Client is in the right chat
+      // 2. Client is not excluded
+      // 3. Client is open
+      // 4. We haven't already sent to this socket
+      if (chatIdMatches && !isExcluded && isOpen && !alreadySent) {
+        try {
+          client.send(messageStr);
+          sentSockets.add(client);
+          totalSent++;
+        } catch (error) {
+          console.error(`[WebSocket Server] Error sending via wss.clients to ${clientUserType}:`, error);
+        }
+      }
+    });
+  }
+  
+  if (connectionInfo.total === 0 && totalSent === 0) {
+    console.warn(`[WebSocket Server] ⚠ No clients received the message for chat ${chatId}`);
+  }
 }
 

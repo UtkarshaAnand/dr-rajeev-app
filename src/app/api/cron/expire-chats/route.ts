@@ -19,13 +19,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[Cron] Starting chat expiry cleanup...');
     const startTime = Date.now();
     
     await expireChats();
     
     const duration = Date.now() - startTime;
-    console.log(`[Cron] Chat expiry cleanup completed in ${duration}ms`);
 
     return NextResponse.json({
       success: true,

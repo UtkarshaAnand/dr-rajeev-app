@@ -24,7 +24,6 @@ export function initializeWebSocketServer(): any {
 
   try {
     const wss = startWebSocketServer(WS_PORT);
-    console.log('[Server Init] WebSocket server initialized on port', WS_PORT);
     return wss;
   } catch (error: any) {
     console.error('[Server Init] Failed to initialize WebSocket server:', error);

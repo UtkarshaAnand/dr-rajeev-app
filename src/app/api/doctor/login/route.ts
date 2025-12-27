@@ -8,9 +8,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    console.log('[LOGIN] Attempting login for email:', email);
-    console.log('[LOGIN] Service role key available:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -20,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     // Normalize email (trim and lowercase)
     const normalizedEmail = email.trim().toLowerCase();
-    console.log('[LOGIN] Normalized email:', normalizedEmail);
 
     const doctor = await getDoctorByEmail(normalizedEmail);
     if (!doctor) {

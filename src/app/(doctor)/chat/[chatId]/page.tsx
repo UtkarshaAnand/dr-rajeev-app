@@ -69,6 +69,7 @@ export default function DoctorChat() {
     pollingInterval: 2000,
   });
 
+
   // Handle input changes for typing indicator
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -196,7 +197,7 @@ export default function DoctorChat() {
         await loadMessages();
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('[Doctor Chat] Failed to send message:', error);
     } finally {
       setIsLoading(false);
     }

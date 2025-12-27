@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMessage, getMessages, getChat, getAllDoctors, updateDoctorFCMTokens } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
-import { getWebSocketServer, broadcastMessage } from '@/lib/websocket-server';
+import { broadcastMessage } from '@/lib/websocket-server';
 import { initializeWebSocketServer } from '@/lib/server-init';
 import { sendPushNotificationToMultiple } from '@/lib/firebase-admin';
 
@@ -68,21 +68,18 @@ export async function POST(request: NextRequest) {
 
     const message = await createMessage(chatId, sender, content);
 
-    // Ensure WebSocket server is running and broadcast message
+    // Broadcast message via WebSocket server
     try {
+      // Ensure WebSocket server is initialized and get the instance
       initializeWebSocketServer();
       
-      // Broadcast message via WebSocket
-      const wss = getWebSocketServer();
-      if (wss) {
-        console.log(`[Messages API] Broadcasting message ${message.id} to chat ${chatId}`);
-        broadcastMessage(chatId, {
-          type: 'message',
-          message: message,
-        });
-      } else {
-        console.warn('[Messages API] WebSocket server not available, message saved but not broadcast');
-      }
+      const broadcastPayload = {
+        type: 'message',
+        message: message,
+      };
+      
+      // Use broadcastMessage which will use connections map or fallback to wss.clients
+      broadcastMessage(chatId, broadcastPayload);
     } catch (error) {
       console.error('[Messages API] Failed to broadcast message:', error);
       // Continue even if broadcast fails - message is still saved
@@ -111,11 +108,8 @@ export async function POST(request: NextRequest) {
             }
           );
 
-          console.log(`[Messages API] Push notifications sent: ${result.success} success, ${result.failure} failed`);
-
           // Remove invalid tokens
           if (result.failedTokens.length > 0) {
-            console.log(`[Messages API] Removing ${result.failedTokens.length} invalid FCM tokens`);
             for (const doctor of doctors) {
               const validTokens = (doctor.fcm_tokens || []).filter(
                 token => !result.failedTokens.includes(token)
@@ -125,8 +119,6 @@ export async function POST(request: NextRequest) {
               }
             }
           }
-        } else {
-          console.log('[Messages API] No FCM tokens registered, skipping push notification');
         }
       } catch (error: any) {
         // Don't fail message creation if push fails

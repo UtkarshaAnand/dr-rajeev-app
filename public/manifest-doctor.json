@@ -1,0 +1,48 @@
+{
+  "name": "Dr. Rajeev - Doctor Portal",
+  "short_name": "Dr Portal",
+  "description": "Doctor PWA for managing patient chats and consultations",
+  "start_url": "/inbox",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#017CA6",
+  "theme_color": "#017CA6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["medical", "health"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Inbox",
+      "short_name": "Inbox",
+      "description": "View patient chats",
+      "url": "/inbox",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
+

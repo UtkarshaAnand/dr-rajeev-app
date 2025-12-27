@@ -13,6 +13,35 @@ interface SocketConnection {
 // In-memory store for WebSocket connections
 const connections = new Map<string, SocketConnection[]>();
 
+// Helper function to get connection info for debugging
+export function getConnectionInfo(chatId: string): any {
+  const chatConnections = connections.get(chatId);
+  if (!chatConnections) {
+    return { chatId, connections: [], total: 0 };
+  }
+  return {
+    chatId,
+    total: chatConnections.length,
+    connections: chatConnections.map(conn => ({
+      type: conn.type,
+      readyState: conn.socket.readyState,
+      readyStateName: conn.socket.readyState === WebSocket.OPEN ? 'OPEN' : 
+                       conn.socket.readyState === WebSocket.CONNECTING ? 'CONNECTING' :
+                       conn.socket.readyState === WebSocket.CLOSING ? 'CLOSING' :
+                       conn.socket.readyState === WebSocket.CLOSED ? 'CLOSED' : 'UNKNOWN',
+    })),
+  };
+}
+
+// Get actual socket connections for a chat (for tracking sent sockets)
+export function getChatSockets(chatId: string): WebSocket[] {
+  const chatConnections = connections.get(chatId);
+  if (!chatConnections) {
+    return [];
+  }
+  return chatConnections.map(conn => conn.socket);
+}
+
 export function addConnection(
   chatId: string,
   socket: WebSocket,
@@ -45,28 +74,22 @@ export function broadcastToChat(
 ): void {
   const chatConnections = connections.get(chatId);
   if (!chatConnections || chatConnections.length === 0) {
-    console.log(`[Socket] No connections found for chat ${chatId} to broadcast to`);
     return;
   }
 
-  console.log(`[Socket] Broadcasting to ${chatConnections.length} connection(s) in chat ${chatId}`);
-  
-  let sentCount = 0;
   chatConnections.forEach((conn) => {
-    if (conn.socket !== excludeSocket && conn.socket.readyState === WebSocket.OPEN) {
+    const isExcluded = conn.socket === excludeSocket;
+    const isOpen = conn.socket.readyState === WebSocket.OPEN;
+    
+    if (!isExcluded && isOpen) {
       try {
-        conn.socket.send(JSON.stringify(message));
-        sentCount++;
-        console.log(`[Socket] Message sent to ${conn.type} in chat ${chatId}`);
+        const messageStr = JSON.stringify(message);
+        conn.socket.send(messageStr);
       } catch (error) {
-        console.error(`[Socket] Error sending message to ${conn.type} in chat ${chatId}:`, error);
+        console.error(`[Socket] Error sending to ${conn.type}:`, error);
       }
-    } else {
-      console.log(`[Socket] Skipping ${conn.type} in chat ${chatId} - socket state: ${conn.socket.readyState}, excluded: ${conn.socket === excludeSocket}`);
     }
   });
-  
-  console.log(`[Socket] Broadcast complete: ${sentCount}/${chatConnections.length} messages sent`);
 }
 
 export function broadcastToDoctors(message: any): void {
