@@ -17,7 +17,7 @@ export default function OfflinePage() {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">You're Offline</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re Offline</h1>
         <p className="text-gray-600 mb-6">
           Please check your internet connection and try again.
         </p>

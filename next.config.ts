@@ -8,24 +8,27 @@ const pwa = withPWA({
   skipWaiting: true,
 });
 
-// Only use basePath and static export for production builds, not for local development
-// In development mode (npm run dev), these will be disabled
-// In production build (npm run build), these will be enabled for GitHub Pages
+// Determine deployment target
+// Set DEPLOYMENT_TARGET=static for static export (GitHub Pages)
+// Omit or set to 'server' for Node.js server (Render, Vercel, etc.)
+const deploymentTarget = process.env.DEPLOYMENT_TARGET || 'server';
+const isStaticExport = deploymentTarget === 'static';
 const isDev = process.env.NODE_ENV === 'development';
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  // Only enable static export for production builds (GitHub Pages)
-  // Dev server doesn't support static export
-  ...(!isDev ? { output: "export" } : {}),
+  // Only enable static export if explicitly set
+  // Render and other Node.js platforms need server mode
+  ...(isStaticExport ? { output: "export" } : {}),
   trailingSlash: true,
   images: {
-    unoptimized: true, // Required for static export
+    // Only unoptimized for static export
+    ...(isStaticExport ? { unoptimized: true } : {}),
     formats: ["image/avif", "image/webp"],
   },
-  // Only set basePath for production builds (GitHub Pages)
-  // Leave empty for local development
-  ...(!isDev ? {
+  // Only set basePath for static export (GitHub Pages)
+  // Render doesn't need basePath
+  ...(isStaticExport && !isDev ? {
     basePath: "/dr-rajeev-app",
     assetPrefix: "/dr-rajeev-app",
   } : {}),
