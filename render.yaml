@@ -17,10 +17,8 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false # Optional, set manually if needed
       # WebSocket Configuration
-      - key: WS_PORT
-        value: 3001
-      - key: NEXT_PUBLIC_WS_PORT
-        value: 3001
+      # WebSocket is now supported on the same port as HTTP via custom server
+      # No additional configuration needed - WebSocket available at /ws path
       # Firebase (optional, for push notifications)
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false # Set manually in Render dashboard if using push notifications

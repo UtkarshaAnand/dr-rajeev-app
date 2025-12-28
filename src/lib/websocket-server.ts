@@ -22,10 +22,11 @@ declare global {
 
 // Get server from global or module-level variable
 function getServerInstance(): WebSocketServer | null {
-  // In Next.js serverless, use global to share across module contexts
-  if (typeof global !== 'undefined' && global.__wss__) {
-    return global.__wss__;
+  // Check global first (set by custom server)
+  if (typeof global !== 'undefined' && (global as any).__wss__) {
+    return (global as any).__wss__;
   }
+  // Fall back to module-level variable (for standalone mode)
   return wss;
 }
 

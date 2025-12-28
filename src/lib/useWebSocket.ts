@@ -59,16 +59,19 @@ export function useWebSocket({
     if (typeof window === 'undefined') return '';
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = process.env.NEXT_PUBLIC_WS_HOST || window.location.hostname;
-    const port = process.env.NEXT_PUBLIC_WS_PORT || '3001';
+    const host = process.env.NEXT_PUBLIC_WS_HOST || window.location.host;
     
-    // In production on Render, WebSocket might be on the same port
-    // Try to detect if we're in production
-    if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_WS_PORT) {
-      return `${protocol}//${host}/ws`;
+    // If NEXT_PUBLIC_WS_PORT is explicitly set, use it (for local dev with separate port)
+    // Otherwise, use the same host with /ws path (custom server mode)
+    if (process.env.NEXT_PUBLIC_WS_PORT && process.env.NODE_ENV !== 'production') {
+      // Local development with separate port (standalone WebSocket server)
+      const hostname = process.env.NEXT_PUBLIC_WS_HOST || window.location.hostname;
+      return `${protocol}//${hostname}:${process.env.NEXT_PUBLIC_WS_PORT}`;
     }
     
-    return `${protocol}//${host}:${port}`;
+    // Production or custom server mode - use same host/port with /ws path
+    // This works for Render where everything is on the same port
+    return `${protocol}//${host}/ws`;
   }, []);
 
   // Track last message timestamp for polling
@@ -188,10 +191,25 @@ export function useWebSocket({
     });
 
     try {
+      // Set a timeout for connection - if it takes too long, fall back to polling
+      const connectionTimeout = setTimeout(() => {
+        if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+          console.log('[WebSocket] Connection timeout, falling back to polling');
+          wsRef.current.close();
+          startPolling();
+        }
+      }, 5000); // 5 second timeout
+
       const ws = new WebSocket(url);
       wsRef.current = ws;
-
+      
+      // Clear timeout function
+      const clearConnectionTimeout = () => {
+        clearTimeout(connectionTimeout);
+      };
+      
       ws.onopen = () => {
+        clearConnectionTimeout();
         setIsConnected(true);
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
@@ -261,6 +279,7 @@ export function useWebSocket({
       };
 
       ws.onclose = (event) => {
+        clearConnectionTimeout();
         setIsConnected(false);
         setConnectionStatus('disconnected');
         wsRef.current = null;
@@ -273,9 +292,18 @@ export function useWebSocket({
 
         // Handle different close codes
         const isNormalClosure = event.code === 1000;
+        const isConnectionRefused = event.code === 1006; // Connection closed abnormally (often means server not reachable)
 
         if (onErrorRef.current && !isNormalClosure) {
           onErrorRef.current(new Error(`WebSocket closed: ${event.code} ${event.reason || 'Connection lost'}`));
+        }
+
+        // On Render or if connection is refused, fall back to polling immediately
+        // Don't retry WebSocket if it's clearly not available
+        if (isConnectionRefused && reconnectAttemptsRef.current >= 2) {
+          console.log('[WebSocket] Connection refused multiple times, falling back to polling');
+          startPolling();
+          return;
         }
 
         // Attempt to reconnect if not a normal closure and haven't exceeded max attempts
@@ -288,6 +316,7 @@ export function useWebSocket({
           }, delay);
         } else {
           // Max attempts reached or normal closure, fall back to polling
+          console.log('[WebSocket] Max reconnection attempts reached, falling back to polling');
           startPolling();
         }
       };
@@ -297,6 +326,7 @@ export function useWebSocket({
       if (onErrorRef.current) {
         onErrorRef.current(error as Error);
       }
+      // Immediately fall back to polling on error
       startPolling();
     }
   }, [chatId, sender, enabled, getWebSocketUrl, startPolling, stopPolling]);

@@ -3,7 +3,12 @@
 
 import { startWebSocketServer, getWebSocketServer } from './websocket-server';
 
-const WS_PORT = parseInt(process.env.WS_PORT || '3001', 10);
+// On Render, use the same port as Next.js (PORT env var)
+// In development, use a separate port (3001)
+// If PORT is not set (local dev), default to 3001
+const WS_PORT = process.env.PORT 
+  ? parseInt(process.env.PORT, 10) 
+  : parseInt(process.env.WS_PORT || '3001', 10);
 
 let initializationAttempted = false;
 

@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npx tsx server.ts",
+    "dev:next": "next dev",
     "build": "next build",
     "export": "next build",
-    "start": "next start",
+    "start": "npx tsx server.ts",
+    "start:next": "next start",
     "lint": "eslint",
     "create-doctor": "node scripts/create-doctor.js"
   },
@@ -19,6 +21,7 @@
     "next-pwa": "^5.6.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "tsx": "^4.7.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
