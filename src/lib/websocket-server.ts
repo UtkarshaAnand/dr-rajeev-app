@@ -199,7 +199,19 @@ export function getWebSocketServer(): WebSocketServer | null {
 export function stopWebSocketServer(): void {
   const server = getServerInstance();
   if (server) {
-    server.close();
+    try {
+      // In noServer mode, close() may not work the same way
+      // But we can still close all connections
+      server.clients.forEach((client) => {
+        client.close();
+      });
+      // Try to close the server if it's not in noServer mode
+      if (typeof (server as any).close === 'function') {
+        server.close();
+      }
+    } catch (error) {
+      // Ignore errors when closing
+    }
     setServerInstance(null);
   }
 }
