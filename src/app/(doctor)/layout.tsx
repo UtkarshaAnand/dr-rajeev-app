@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import InstallPWA from '@/components/InstallPWA';
 import { PWAMeta } from '@/components/PWAMeta';
+import FCMRegistration from '@/components/FCMRegistration';
 
 export const metadata: Metadata = {
   title: 'Doctor Portal - Dr. Rajeev Ranjan',
@@ -29,6 +30,7 @@ export default function DoctorLayout({
   return (
     <>
       <PWAMeta />
+      <FCMRegistration />
       {children}
       <InstallPWA />
     </>
