@@ -26,8 +26,6 @@ export function useFCMRegistration() {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         await registerFCMToken();
-      } else {
-        console.log('[FCM] Notification permission denied');
       }
     } catch (error) {
       console.error('[FCM] Error requesting permission:', error);
@@ -52,15 +50,25 @@ export function useFCMRegistration() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important: Include cookies for authentication
         body: JSON.stringify({ fcmToken }),
       });
 
       if (response.ok) {
-        console.log('[FCM] Token registered successfully');
+        const data = await response.json();
         setIsRegistered(true);
       } else {
         const error = await response.json();
-        console.error('[FCM] Failed to register token:', error);
+        console.error('[FCM] Failed to register token:', {
+          status: response.status,
+          statusText: response.statusText,
+          error,
+        });
+        
+        // If unauthorized, the doctor might not be logged in yet
+        if (response.status === 401) {
+          console.warn('[FCM] Doctor not authenticated. Token will be registered after login.');
+        }
       }
     } catch (error) {
       console.error('[FCM] Error registering token:', error);
@@ -72,7 +80,6 @@ export function useFCMRegistration() {
     if (!isRegistered) return;
 
     const unsubscribe = onForegroundMessage((payload) => {
-      console.log('[FCM] Foreground message received:', payload);
       
       // Show notification even when app is in foreground
       if (payload.notification) {

@@ -194,7 +194,6 @@ export function useWebSocket({
       // Set a timeout for connection - if it takes too long, fall back to polling
       const connectionTimeout = setTimeout(() => {
         if (wsRef.current?.readyState === WebSocket.CONNECTING) {
-          console.log('[WebSocket] Connection timeout, falling back to polling');
           wsRef.current.close();
           startPolling();
         }
@@ -301,7 +300,6 @@ export function useWebSocket({
         // On Render or if connection is refused, fall back to polling immediately
         // Don't retry WebSocket if it's clearly not available
         if (isConnectionRefused && reconnectAttemptsRef.current >= 2) {
-          console.log('[WebSocket] Connection refused multiple times, falling back to polling');
           startPolling();
           return;
         }
@@ -316,7 +314,6 @@ export function useWebSocket({
           }, delay);
         } else {
           // Max attempts reached or normal closure, fall back to polling
-          console.log('[WebSocket] Max reconnection attempts reached, falling back to polling');
           startPolling();
         }
       };

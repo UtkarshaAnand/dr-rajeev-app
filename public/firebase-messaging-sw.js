@@ -2,15 +2,18 @@
 // This file must be in the public directory
 // Firebase config will be injected by the client
 
+// Import Firebase scripts at top level (required for service workers)
+try {
+  importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+} catch (error) {
+  console.error('[FCM SW] Failed to load Firebase scripts:', error);
+}
+
 // Default config - will be overridden by client
-let firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: '',
-};
+let firebaseConfig = null;
+let messaging = null;
+let isInitialized = false;
 
 // Listen for config from client
 self.addEventListener('message', (event) => {
@@ -21,42 +24,51 @@ self.addEventListener('message', (event) => {
 });
 
 function initializeFirebase() {
-  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  if (isInitialized) {
+    return; // Already initialized
+  }
+
+  if (!firebaseConfig || !firebaseConfig.apiKey || !firebaseConfig.projectId) {
     console.warn('[FCM SW] Firebase config not available');
     return;
   }
 
-  // Import Firebase scripts dynamically
-  importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-  importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+  // Check if firebase is available
+  if (typeof firebase === 'undefined') {
+    console.error('[FCM SW] Firebase scripts not loaded');
+    return;
+  }
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
+  try {
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
 
-  // Retrieve an instance of Firebase Messaging
-  const messaging = firebase.messaging();
+    // Retrieve an instance of Firebase Messaging
+    messaging = firebase.messaging();
 
-  // Handle background messages
-  messaging.onBackgroundMessage((payload) => {
-    console.log('[FCM SW] Background message received:', payload);
+    // Handle background messages
+    messaging.onBackgroundMessage((payload) => {
 
-    const notificationTitle = payload.notification?.title || 'New Message';
-    const notificationOptions = {
-      body: payload.notification?.body || '',
-      icon: payload.notification?.icon || '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      data: payload.data || {},
-      tag: payload.data?.chatId || 'new-message',
-    };
+      const notificationTitle = payload.notification?.title || 'New Message';
+      const notificationOptions = {
+        body: payload.notification?.body || '',
+        icon: payload.notification?.icon || '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        data: payload.data || {},
+        tag: payload.data?.chatId || 'new-message',
+      };
 
-    return self.registration.showNotification(notificationTitle, notificationOptions);
-  });
+      return self.registration.showNotification(notificationTitle, notificationOptions);
+    });
+
+    isInitialized = true;
+  } catch (error) {
+    console.error('[FCM SW] Error initializing Firebase:', error);
+  }
 }
 
 // Handle notification clicks
-self.addEventListener('notificationclick', (event) => {
-  console.log('[FCM SW] Notification clicked:', event);
-  
+self.addEventListener('notificationclick', (event) => {  
   event.notification.close();
 
   // Get the chatId from notification data

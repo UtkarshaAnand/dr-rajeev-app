@@ -30,7 +30,6 @@ export function getFirebaseAdminApp(): App {
       credential: cert(serviceAccountJson),
     });
 
-    console.log('[Firebase Admin] Initialized successfully');
     return app;
   } catch (error) {
     console.error('[Firebase Admin] Failed to initialize:', error);
@@ -74,7 +73,6 @@ export async function sendPushNotification(
     };
 
     const response = await messaging.send(message);
-    console.log('[FCM] Successfully sent message:', response);
     return response;
   } catch (error: any) {
     console.error('[FCM] Error sending message:', error);

@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
     const { fcmToken } = body;
 
     if (!fcmToken || typeof fcmToken !== 'string') {
+      console.error('[FCM Token API] Invalid fcmToken:', { fcmToken, type: typeof fcmToken });
       return NextResponse.json(
         { error: 'fcmToken is required and must be a string' },
         { status: 400 }
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
     // Get doctor
     const doctor = await getDoctorByEmail(doctorEmail);
     if (!doctor) {
+      console.error('[FCM Token API] Doctor not found:', doctorEmail);
       return NextResponse.json(
         { error: 'Doctor not found' },
         { status: 404 }
@@ -36,21 +38,33 @@ export async function POST(request: NextRequest) {
 
     await updateDoctorFCMTokens(doctor.id, updatedTokens);
 
+    // Verify the update by fetching the doctor again
+    const updatedDoctor = await getDoctorByEmail(doctorEmail);
+
+    if (!updatedDoctor?.fcm_tokens?.includes(fcmToken)) {
+      console.error('[FCM Token API] WARNING: Token was not saved to database!', {
+        expectedToken: fcmToken.substring(0, 20) + '...',
+        savedTokens: updatedDoctor?.fcm_tokens || [],
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: 'FCM token registered successfully',
+      tokensCount: updatedDoctor?.fcm_tokens?.length || 0,
     });
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
+      console.error('[FCM Token API] Unauthorized - doctor not logged in');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    console.error('Failed to register FCM token:', error);
+    console.error('[FCM Token API] Failed to register FCM token:', error);
     return NextResponse.json(
-      { error: 'Failed to register FCM token' },
+      { error: 'Failed to register FCM token', details: error.message },
       { status: 500 }
     );
   }

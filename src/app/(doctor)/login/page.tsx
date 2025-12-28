@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getFCMToken } from '@/lib/firebase-client';
 
 export default function DoctorLogin() {
   const router = useRouter();
@@ -19,12 +20,45 @@ export default function DoctorLogin() {
       const response = await fetch('/api/doctor/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Small delay to ensure session cookie is set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Register FCM token after successful login
+        try {
+          const fcmToken = await getFCMToken();
+          if (fcmToken) {            
+            const fcmResponse = await fetch('/api/doctor/fcm-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ fcmToken }),
+            });
+
+            if (fcmResponse.ok) {
+              const fcmData = await fcmResponse.json();
+            } else {
+              const fcmError = await fcmResponse.json().catch(() => ({ error: 'Unknown error' }));
+              console.error('[Login] Failed to register FCM token:', {
+                status: fcmResponse.status,
+                statusText: fcmResponse.statusText,
+                error: fcmError,
+              });
+            }
+          } else {
+            console.warn('[Login] No FCM token obtained');
+          }
+        } catch (fcmError) {
+          // Don't block login if FCM registration fails
+          console.error('[Login] Error during FCM token registration:', fcmError);
+        }
+        
         router.push('/inbox');
       } else {
         setError(data.error || 'Login failed');

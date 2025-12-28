@@ -222,10 +222,18 @@ export async function updateDoctorFCMTokens(
   doctorId: string,
   tokens: string[]
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('doctors')
     .update({ fcm_tokens: tokens })
-    .eq('id', doctorId);
+    .eq('id', doctorId)
+    .select();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[DB] Error updating FCM tokens:', error);
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    console.warn('[DB] No rows were updated. Doctor might not exist or update failed silently.');
+  }
 }
